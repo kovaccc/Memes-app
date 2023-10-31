@@ -1,6 +1,7 @@
 // ignore_for_file: always_use_package_imports
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:meme_app/features/memes/domain/notifiers/images_notifier.dart';
 import 'package:meme_app/features/memes/domain/notifiers/memes_notifier.dart';
 import 'package:q_architecture/base_state_notifier.dart';
 
@@ -12,6 +13,10 @@ class MemesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final memesState = switch (ref.watch(memesNotifierProvider)) {
+      BaseData(data: final data) => data,
+      _ => null,
+    };
+    final imagesState = switch (ref.watch(imagesNotifierProvider)) {
       BaseData(data: final data) => data,
       _ => null,
     };
@@ -29,14 +34,14 @@ class MemesPage extends ConsumerWidget {
               'All Files',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            if (memesState != null && memesState.allFiles != null)
+            if (imagesState != null)
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
                   physics: const BouncingScrollPhysics(),
-                  itemCount: memesState.allFiles?.length,
+                  itemCount: imagesState.length,
                   itemBuilder: (context, index) =>
-                      Image.asset(memesState.allFiles![index]),
+                      Image.asset(imagesState[index]),
                 ),
               ),
             const SizedBox(height: 20),
@@ -57,8 +62,9 @@ class MemesPage extends ConsumerWidget {
               ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () =>
-                  ref.read(memesNotifierProvider.notifier).processImages(),
+              onPressed: () => ref
+                  .read(memesNotifierProvider.notifier)
+                  .filterMemes(imagesState ?? []),
               child: const Text(
                 'Filter Memes',
                 style: TextStyle(fontSize: 18),

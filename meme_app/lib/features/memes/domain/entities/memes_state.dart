@@ -4,7 +4,6 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class MemesState extends Equatable {
   final FaceDetector? faceDetector;
   final List<String>? memesFiles;
-  final List<String>? allFiles;
   final bool canFaceDetectorProcess;
   final bool isFaceDetectorBusy;
 
@@ -13,7 +12,6 @@ class MemesState extends Equatable {
     this.canFaceDetectorProcess = true,
     this.isFaceDetectorBusy = false,
     this.memesFiles,
-    this.allFiles,
   });
 
   MemesState copyWith({
@@ -21,7 +19,6 @@ class MemesState extends Equatable {
     bool? canFaceDetectorProcess,
     bool? isFaceDetectorBusy,
     List<String>? memesFiles,
-    List<String>? allFiles,
   }) {
     return MemesState(
       faceDetector: faceDetector ?? this.faceDetector,
@@ -29,7 +26,6 @@ class MemesState extends Equatable {
           canFaceDetectorProcess ?? this.canFaceDetectorProcess,
       isFaceDetectorBusy: isFaceDetectorBusy ?? this.isFaceDetectorBusy,
       memesFiles: memesFiles ?? this.memesFiles,
-      allFiles: allFiles ?? this.allFiles,
     );
   }
 
@@ -39,6 +35,5 @@ class MemesState extends Equatable {
         canFaceDetectorProcess,
         isFaceDetectorBusy,
         memesFiles,
-        allFiles,
       ];
 }

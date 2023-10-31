@@ -1,19 +1,18 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-import 'package:loggy/loggy.dart';
-import 'package:meme_app/common/presentation/image_assets.dart';
+import 'package:meme_app/features/memes/data/file_repository.dart';
 import 'package:meme_app/features/memes/domain/entities/memes_state.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:q_architecture/base_state_notifier.dart';
 
 final memesNotifierProvider =
     BaseStateNotifierProvider<MemesNotifier, MemesState>((ref) => MemesNotifier(
           ref,
+          ref.watch(fileRepositoryProvider),
         )..initFaceDetector());
 
 class MemesNotifier extends BaseStateNotifier<MemesState> {
+  final FileRepository _fileRepository;
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
       enableContours: true,
@@ -21,71 +20,69 @@ class MemesNotifier extends BaseStateNotifier<MemesState> {
     ),
   );
 
-  MemesNotifier(super.ref);
+  MemesNotifier(super.ref, this._fileRepository);
 
   void initFaceDetector() {
     state = BaseState.data(MemesState(
       faceDetector: _faceDetector,
-      allFiles: ImageAssets.assetPaths,
     ));
   }
 
-  Future<void> processImages() async {
+  Future<void> filterMemes(List<String> imageAssetPaths) async {
     showGlobalLoading();
-    final memesState = switch (state) {
-          BaseData(data: final data) => data,
-          _ => null,
-        } ??
-        MemesState(faceDetector: _faceDetector);
-    final images = memesState.allFiles ?? [];
-    final memes = <String>[];
-    for (final image in images) {
-      final byteData = await rootBundle.load(image);
-
-      final file = File('${(await getTemporaryDirectory()).path}/$image');
-      await file.create(recursive: true);
-      await file.writeAsBytes(byteData.buffer
-          .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-
-      final isMeme = await _processImage(InputImage.fromFile(file));
-      if (isMeme) {
-        memes.add(image);
-      }
-    }
+    final memesState = _getMemesDataState();
+    final memes = await _findMemes(imageAssetPaths);
     state = BaseState.data(memesState.copyWith(memesFiles: memes));
     clearGlobalLoading();
   }
 
   @override
   void dispose() {
-    final memesState = switch (state) {
-      BaseData(data: final data) => data,
-      _ => null,
-    };
-    memesState?.faceDetector?.close();
-    if (memesState != null) {
-      state =
-          BaseState.data(memesState.copyWith(canFaceDetectorProcess: false));
-    }
+    final memesState = _getMemesDataState();
+    memesState.faceDetector?.close();
+    state = BaseState.data(memesState.copyWith(canFaceDetectorProcess: false));
     super.dispose();
   }
 
-  Future<bool> _processImage(InputImage inputImage) async {
-    final memesState = switch (state) {
+  Future<List<String>> _findMemes(List<String> imageAssetPaths) async {
+    final memes = <String>[];
+    for (final image in imageAssetPaths) {
+      final file = (await _fileRepository.createFileFromAsset(image))
+          .fold((left) => null, (right) => right);
+      final isMeme = await _hasFaces(InputImage.fromFile(file ?? File('')));
+      if (isMeme) {
+        memes.add(image);
+      }
+    }
+    return memes;
+  }
+
+  Future<List<Face>?> _detectFaces(InputImage inputImage) async {
+    var memesState = _getMemesDataState();
+    if (!memesState.canFaceDetectorProcess || memesState.isFaceDetectorBusy) {
+      return [];
+    }
+    state = BaseState.data(memesState.copyWith(isFaceDetectorBusy: true));
+    memesState = _getMemesDataState();
+    final faces = await memesState.faceDetector?.processImage(inputImage);
+    String text = 'Faces found: ${faces?.length}\n\n';
+    for (final face in (faces ?? [])) {
+      text += 'face: ${face.boundingBox}\n\n';
+    }
+    state = BaseState.data(memesState.copyWith(isFaceDetectorBusy: false));
+    return faces;
+  }
+
+  Future<bool> _hasFaces(InputImage inputImage) async {
+    final faces = await _detectFaces(inputImage);
+    return faces?.isNotEmpty ?? false;
+  }
+
+  MemesState _getMemesDataState() {
+    return switch (state) {
           BaseData(data: final data) => data,
           _ => null,
         } ??
         MemesState(faceDetector: _faceDetector);
-    if (!memesState.canFaceDetectorProcess) return false;
-    if (memesState.isFaceDetectorBusy) return false;
-    state = BaseState.data(memesState.copyWith(isFaceDetectorBusy: true));
-    final faces = await _faceDetector.processImage(inputImage);
-    String text = 'Faces found: ${faces.length}\n\n';
-    for (final face in faces) {
-      text += 'face: ${face.boundingBox}\n\n';
-    }
-    logDebug('Faces result: $text');
-    state = BaseState.data(memesState.copyWith(isFaceDetectorBusy: false));
-    return faces.isNotEmpty;
   }
 }
