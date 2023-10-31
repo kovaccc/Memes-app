@@ -10,11 +10,9 @@ abstract class ImageAssets {
 
 
   static const List<String> assetPaths = [
-    aliImage,
     imageFileName,
     memeExampleImage,
     targetMarketMeme,
-    tysonImage,
     woodImage,
   ];
 }
