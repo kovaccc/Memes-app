@@ -8,11 +8,12 @@ abstract class ImageAssets {
   static const String tysonImage = '$imagePath/tyson.jpeg';
   static const String woodImage = '$imagePath/wood.jpeg';
 
-
   static const List<String> assetPaths = [
+    woodImage,
     imageFileName,
     memeExampleImage,
+    tysonImage,
     targetMarketMeme,
-    woodImage,
+    aliImage,
   ];
 }
