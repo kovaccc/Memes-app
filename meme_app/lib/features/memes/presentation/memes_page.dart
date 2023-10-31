@@ -44,12 +44,12 @@ class MemesPage extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 20),
-            const Text(
-              'Meme Files',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
             const SizedBox(height: 20),
-            if (memesState != null && memesState.memesFiles != null)
+            if (memesState != null && memesState.memesFiles != null) ...[
+              const Text(
+                'Meme Files',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               Expanded(
                 child: ListView.builder(
                   physics: const BouncingScrollPhysics(),
@@ -58,6 +58,7 @@ class MemesPage extends ConsumerWidget {
                       Image.asset(memesState.memesFiles![index]),
                 ),
               ),
+            ],
             ElevatedButton(
               onPressed: () => ref
                   .read(memesNotifierProvider.notifier)
