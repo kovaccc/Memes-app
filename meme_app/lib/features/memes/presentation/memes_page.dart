@@ -37,7 +37,6 @@ class MemesPage extends ConsumerWidget {
             if (imagesState != null)
               Expanded(
                 child: ListView.builder(
-                  shrinkWrap: true,
                   physics: const BouncingScrollPhysics(),
                   itemCount: imagesState.length,
                   itemBuilder: (context, index) =>
@@ -53,14 +52,12 @@ class MemesPage extends ConsumerWidget {
             if (memesState != null && memesState.memesFiles != null)
               Expanded(
                 child: ListView.builder(
-                  shrinkWrap: true,
                   physics: const BouncingScrollPhysics(),
                   itemCount: memesState.memesFiles?.length,
                   itemBuilder: (context, index) =>
                       Image.asset(memesState.memesFiles![index]),
                 ),
               ),
-            const Spacer(),
             ElevatedButton(
               onPressed: () => ref
                   .read(memesNotifierProvider.notifier)
